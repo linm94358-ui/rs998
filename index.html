@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>邀请统计工具</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #C2E4DF;
+            --bg2: #D6EFEB;
+            --card: #FFFFFF;
+            --card-h: #F4FAF8;
+            --accent: #2D8B7A;
+            --accent-h: #37A08D;
+            --accent-dim: rgba(45,139,122,0.08);
+            --warm: #D48828;
+            --warm-h: #E09A38;
+            --text: #263B36;
+            --text2: #6B8E85;
+            --border: #AAD5CB;
+            --danger: #C44040;
+            --success: #2D8B4A;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 30%,rgba(160,210,198,0.4)0%,transparent 55%),radial-gradient(ellipse at 80% 70%,rgba(160,210,198,0.3)0%,transparent 50%);pointer-events:none;z-index:0}
+        ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+        @keyframes slideR{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+        .fade-up{animation:fadeUp .4s ease-out both}
+        .scale-in{animation:scaleIn .3s ease-out both}
+
+        /* Toast */
+        .toast-box{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+        .toast{padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;animation:slideR .3s ease-out;box-shadow:0 4px 24px rgba(0,0,0,.1);max-width:340px;display:flex;align-items:center;gap:8px}
+        .toast-ok{background:#E0F5E8;border:1px solid var(--success);color:#1A5A32}
+        .toast-err{background:#F5E0E0;border:1px solid var(--danger);color:#6A1A1A}
+        .toast-info{background:#E0ECF5;border:1px solid #4A8AB8;color:#1A3A5A}
+
+        /* 按钮 */
+        .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .2s;font-family:inherit;white-space:nowrap}
+        .btn:active{transform:scale(.96)}
+        .btn-p{background:var(--accent);color:#fff}
+        .btn-p:hover{background:var(--accent-h);box-shadow:0 2px 14px rgba(45,139,122,.25)}
+        .btn-s{background:var(--card);color:var(--text);border:1px solid var(--border)}
+        .btn-s:hover{background:var(--card-h);border-color:var(--accent)}
+        .btn-d{background:rgba(196,64,64,.08);color:var(--danger);border:1px solid rgba(196,64,64,.2)}
+        .btn-d:hover{background:rgba(196,64,64,.16)}
+        .btn-g{background:transparent;color:var(--text2);padding:6px 10px;border-radius:6px}
+        .btn-g:hover{color:var(--accent);background:var(--accent-dim)}
+
+        /* 输入 */
+        .ipt{width:100%;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:all .2s}
+        .ipt:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,139,122,.1)}
+        .ipt::placeholder{color:var(--text2)}
+        .num-ipt{width:88px;padding:8px 6px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;font-family:inherit;text-align:center;outline:none;transition:all .2s}
+        .num-ipt:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,139,122,.1)}
+
+        /* 搜索框 */
+        .search-wrap{position:relative}
+        .search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:13px;pointer-events:none}
+        .search-ipt{padding-left:34px}
+
+        /* 卡片 */
+        .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;transition:all .25s;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+        .card:hover{box-shadow:0 4px 18px rgba(0,0,0,.08);border-color:rgba(45,139,122,.2)}
+
+        /* Modal */
+        .modal-bg{position:fixed;inset:0;background:rgba(100,160,148,.45);backdrop-filter:blur(5px);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fadeUp .2s ease-out}
+        .modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:520px;width:92%;max-height:90vh;overflow-y:auto;animation:scaleIn .3s ease-out;box-shadow:0 8px 40px rgba(0,0,0,.12)}
+
+        /* 排名 */
+        .medal{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+        .m1{background:linear-gradient(135deg,#ffd700,#f0a800);color:#1a1a1a;box-shadow:0 2px 10px rgba(255,215,0,.3)}
+        .m2{background:linear-gradient(135deg,#d0d0d0,#a8a8a8);color:#1a1a1a;box-shadow:0 2px 10px rgba(192,192,192,.3)}
+        .m3{background:linear-gradient(135deg,#cd7f32,#a06028);color:#fff;box-shadow:0 2px 10px rgba(205,127,50,.3)}
+        .m0{background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
+
+        /* 分数 */
+        .score-big{font-size:30px;font-weight:900;color:var(--warm)}
+        .score-sm{font-size:22px;font-weight:900;color:var(--warm)}
+
+        /* 标签 */
+        .tag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+        .tag-r1{background:rgba(45,139,74,.1);color:#2D8B4A}
+        .tag-r2{background:rgba(45,120,160,.1);color:#2D78A0}
+        .tag-r3{background:rgba(212,136,40,.1);color:#C47820}
+        .tag-up{background:rgba(130,80,170,.1);color:#8250AA}
+
+        /* 空状态 */
+        .empty{text-align:center;padding:48px 20px;color:var(--text2)}
+        .empty i{font-size:44px;margin-bottom:14px;opacity:.2;display:block}
+
+        .divider{height:1px;background:linear-gradient(to right,transparent,var(--border),transparent);margin:12px 0}
+
+        /* 行 */
+        .rank-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;transition:all .2s}
+        .rank-row:hover{background:rgba(45,139,122,.05)}
+        .rank-row.top1{background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.15)}
+
+        .accent-line{height:3px;background:linear-gradient(to right,var(--accent),var(--warm),transparent);border-radius:2px}
+
+        /* 统计框样式（匹配图片KPI风格） */
+        .stat-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+        .stat-box .stat-num{font-size:28px;font-weight:900;color:var(--warm);line-height:1.2}
+        .stat-box .stat-label{font-size:12px;color:var(--text2);margin-top:4px}
+
+        @media(max-width:840px){.main-grid{grid-template-columns:1fr!important}}
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+    </style>
+</head>
+<body>
+    <div class="toast-box" id="toastBox"></div>
+
+    <div style="position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:20px 24px 40px">
+
+        <!-- 头部 -->
+        <header class="fade-up" style="margin-bottom:24px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+                <div>
+                    <h1 style="font-size:26px;font-weight:900;letter-spacing:-0.5px">
+                        <i class="fas fa-chart-bar" style="color:var(--accent);margin-right:8px"></i>邀请统计工具
+                    </h1>
+                    <p style="font-size:12px;color:var(--text2);margin-top:4px">R1=1分 | R2=3分 | R3=8分 | R1↑R2=4分 | R1↑R3=10分 | R2↑R3=6分</p>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="btn btn-s" onclick="importData()" aria-label="导入数据"><i class="fas fa-file-import"></i> 导入</button>
+                    <button class="btn btn-s" onclick="exportData()" aria-label="导出数据"><i class="fas fa-file-export"></i> 导出</button>
+                    <button class="btn btn-d" onclick="confirmClearAll()" aria-label="清空数据"><i class="fas fa-trash-alt"></i> 清空</button>
+                </div>
+            </div>
+            <div class="accent-line" style="margin-top:14px;width:200px"></div>
+        </header>
+
+        <!-- 统计概览（KPI风格） -->
+        <div id="statsOverview" class="fade-up" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;animation-delay:.05s"></div>
+
+        <!-- 主体两栏 -->
+        <div class="main-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+
+            <!-- 左栏：账号管理 -->
+            <section class="fade-up" style="animation-delay:.08s">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                    <h2 style="font-size:17px;font-weight:700"><i class="fas fa-users" style="color:var(--accent);margin-right:6px;font-size:15px"></i>账号管理</h2>
+                    <button class="btn btn-p" onclick="openAddModal()"><i class="fas fa-plus"></i> 添加账号</button>
+                </div>
+                <!-- 搜索栏 -->
+                <div class="search-wrap" style="margin-bottom:12px">
+                    <i class="fas fa-search"></i>
+                    <input class="ipt search-ipt" id="searchInput" placeholder="搜索账号..." oninput="renderAccountList()">
+                </div>
+                <div id="accountList"></div>
+            </section>
+
+            <!-- 右栏：排行榜 -->
+            <section class="fade-up" style="animation-delay:.12s">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                    <h2 style="font-size:17px;font-weight:700"><i class="fas fa-trophy" style="color:var(--warm);margin-right:6px;font-size:15px"></i>积分排行</h2>
+                    <button class="btn btn-p" onclick="copyRanking()" id="copyBtn" style="display:none"><i class="fas fa-copy"></i> 一键复制</button>
+                </div>
+                <div id="rankList"></div>
+
+                <!-- 规则卡片 -->
+                <div class="card" style="margin-top:18px;background:var(--bg2);border-color:var(--border)">
+                    <h3 style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--accent)"><i class="fas fa-info-circle" style="margin-right:4px"></i>计分规则</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:11px;color:var(--text2)">
+                        <span><span class="tag tag-r1">R1</span> 邀请 = 1 分</span>
+                        <span><span class="tag tag-up">R1↑R2</span> = 4 分</span>
+                        <span><span class="tag tag-r2">R2</span> 邀请 = 3 分</span>
+                        <span><span class="tag tag-up">R1↑R3</span> = 10 分</span>
+                        <span><span class="tag tag-r3">R3</span> 邀请 = 8 分</span>
+                        <span><span class="tag tag-up">R2↑R3</span> = 6 分</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div id="modalRoot"></div>
+    <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleFileImport(event)">
+
+    <script>
+    const STORAGE_KEY = 'invite_stats_v1';
+    let accounts = [];
+
+    function loadData() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) accounts = JSON.parse(raw);
+        } catch (e) { accounts = []; }
+    }
+
+    function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
+    }
+
+    function calcScore(a) {
+        return (a.r1||0)*1 + (a.r2||0)*3 + (a.r3||0)*8
+             + (a.r1toR2||0)*4 + (a.r1toR3||0)*10 + (a.r2toR3||0)*6;
+    }
+
+    function maskName(name) {
+        if (!name) return '***';
+        if (name.length <= 6) return name;
+        return name.slice(0,3) + '***' + name.slice(-3);
+    }
+
+    function uid() {
+        return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+    }
+
+    /* ========== Toast ========== */
+    function toast(msg, type) {
+        const box = document.getElementById('toastBox');
+        const cls = type==='ok'?'toast-ok':type==='err'?'toast-err':'toast-info';
+        const icon = type==='ok'?'fa-check-circle':type==='err'?'fa-exclamation-circle':'fa-info-circle';
+        const el = document.createElement('div');
+        el.className = 'toast '+cls;
+        el.innerHTML = '<i class="fas '+icon+'"></i>'+escHtml(msg);
+        box.appendChild(el);
+        setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300)},2800);
+    }
+
+    function escHtml(s) {
+        const d=document.createElement('div');d.textContent=s;return d.innerHTML;
+    }
+
+    /* ========== 渲染 ========== */
+    function render() {
+        renderStatsOverview();
+        renderAccountList();
+        renderRankList();
+    }
+
+    /* 统计概览 KPI 风格 */
+    function renderStatsOverview() {
+        const el = document.getElementById('statsOverview');
+        const total = accounts.length;
+        const totalScore = accounts.reduce((s,a)=>s+calcScore(a),0);
+        const activeCount = accounts.filter(a=>calcScore(a)>0).length;
+        const activePercent = total > 0 ? Math.round(activeCount/total*100) : 0;
+
+        el.innerHTML = `
+            <div class="stat-box">
+                <div class="stat-num">${total}</div>
+                <div class="stat-label">总账号数</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-num">${totalScore}</div>
+                <div class="stat-label">总积分</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-num">${activePercent}<span style="font-size:16px;font-weight:500">%</span></div>
+                <div class="stat-label">有积分占比</div>
+            </div>`;
+    }
+
+    function renderAccountList() {
+        const el = document.getElementById('accountList');
+        const search = (document.getElementById('searchInput').value||'').trim().toLowerCase();
+        const filtered = search ? accounts.filter(a=>a.name.toLowerCase().includes(search)) : accounts;
+
+        if (accounts.length === 0) {
+            el.innerHTML = '<div class="empty"><i class="fas fa-user-plus"></i><p style="font-size:14px">暂无账号</p><p style="font-size:12px;margin-top:4px">点击上方按钮添加账号</p></div>';
+            return;
+        }
+        if (filtered.length === 0) {
+            el.innerHTML = '<div class="empty"><i class="fas fa-search"></i><p style="font-size:14px">未找到匹配账号</p><p style="font-size:12px;margin-top:4px">尝试其他关键词</p></div>';
+            return;
+        }
+
+        let html = '';
+        filtered.forEach((a, i) => {
+            const score = calcScore(a);
+            const delay = i*0.03;
+            html += `
+            <div class="card fade-up" style="margin-bottom:8px;animation-delay:${delay}s;padding:14px 16px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                    <div style="flex:1;min-width:0">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+                            <span style="font-size:14px;font-weight:700;letter-spacing:.3px">${escHtml(maskName(a.name))}</span>
+                            <span class="score-sm" style="font-size:17px">${score}</span>
+                            <span style="font-size:10px;color:var(--text2)">分</span>
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:3px">
+                            ${a.r1?'<span class="tag tag-r1">R1×'+a.r1+'</span>':''}
+                            ${a.r2?'<span class="tag tag-r2">R2×'+a.r2+'</span>':''}
+                            ${a.r3?'<span class="tag tag-r3">R3×'+a.r3+'</span>':''}
+                            ${a.r1toR2?'<span class="tag tag-up">R1↑R2×'+a.r1toR2+'</span>':''}
+                            ${a.r1toR3?'<span class="tag tag-up">R1↑R3×'+a.r1toR3+'</span>':''}
+                            ${a.r2toR3?'<span class="tag tag-up">R2↑R3×'+a.r2toR3+'</span>':''}
+                            ${score===0?'<span style="font-size:10px;color:var(--text2)">暂无数据</span>':''}
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:2px;flex-shrink:0">
+                        <button class="btn btn-g" onclick="openEditModal('${a.id}')" title="编辑" aria-label="编辑"><i class="fas fa-pen" style="font-size:12px"></i></button>
+                        <button class="btn btn-g" onclick="confirmDelete('${a.id}')" title="删除" style="color:var(--danger)" aria-label="删除"><i class="fas fa-trash" style="font-size:12px"></i></button>
+                    </div>
+                </div>
+            </div>`;
+        });
+        el.innerHTML = html;
+    }
+
+    function renderRankList() {
+        const el = document.getElementById('rankList');
+        const copyBtn = document.getElementById('copyBtn');
+        if (accounts.length === 0) {
+            el.innerHTML = '<div class="empty"><i class="fas fa-trophy"></i><p style="font-size:14px">暂无排行数据</p></div>';
+            copyBtn.style.display = 'none';
+            return;
+        }
+        copyBtn.style.display = 'inline-flex';
+
+        const sorted = accounts.slice().sort((a,b)=>calcScore(b)-calcScore(a));
+
+        // 计算并列排名
+        const ranks = [];
+        let curRank = 1;
+        for (let i = 0; i < sorted.length; i++) {
+            if (i > 0 && calcScore(sorted[i]) < calcScore(sorted[i-1])) {
+                curRank = i + 1;
+            }
+            ranks.push(curRank);
+        }
+
+        let html = '<div class="card" style="padding:6px 8px">';
+        sorted.forEach((a, i) => {
+            const score = calcScore(a);
+            const rank = ranks[i];
+            const medalCls = rank===1?'m1':rank===2?'m2':rank===3?'m3':'m0';
+            const rowCls = rank===1?'rank-row top1':'rank-row';
+            const medalContent = rank<=3?rank:rank;
+            html += `
+            <div class="${rowCls}">
+                <div class="medal ${medalCls}">${medalContent}</div>
+                <div style="flex:1;min-width:0">
+                    <span style="font-size:13px;font-weight:600;letter-spacing:.2px">${escHtml(maskName(a.name))}</span>
+                </div>
+                <div style="text-align:right">
+                    <span class="score-big" style="font-size:${rank<=3?22:18}px">${score}</span>
+                    <span style="font-size:10px;color:var(--text2);margin-left:1px">分</span>
+                </div>
+            </div>`;
+            if (i < sorted.length-1) html += '<div class="divider"></div>';
+        });
+        html += '</div>';
+        el.innerHTML = html;
+    }
+
+    /* ========== Modal：添加/编辑 ========== */
+    function openAddModal() { showAccountModal(null); }
+    function openEditModal(id) {
+        const a = accounts.find(x=>x.id===id);
+        if (!a) return;
+        showAccountModal(a);
+    }
+
+    function showAccountModal(editTarget) {
+        const isEdit = !!editTarget;
+        const a = isEdit ? editTarget : {name:'',r1:0,r2:0,r3:0,r1toR2:0,r1toR3:0,r2toR3:0};
+        const title = isEdit?'编辑账号':'添加账号';
+
+        const html = `
+        <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+            <div class="modal-box" role="dialog" aria-label="${title}">
+                <h2 style="font-size:19px;font-weight:700;margin-bottom:20px">
+                    <i class="fas fa-${isEdit?'pen':'plus-circle'}" style="color:var(--accent);margin-right:8px"></i>${title}
+                </h2>
+                <label style="display:block;margin-bottom:4px;font-size:12px;font-weight:500;color:var(--text2)">账号名称</label>
+                <input class="ipt" id="mName" value="${escHtml(a.name)}" placeholder="输入账号（唯一标识）" maxlength="64" style="margin-bottom:14px">
+                <div id="mNameErr" style="color:var(--danger);font-size:12px;margin-top:-10px;margin-bottom:8px;display:none"></div>
+
+                <h3 style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--accent)"><i class="fas fa-user-plus" style="margin-right:4px"></i>邀请数量</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+                    <div><label class="tag tag-r1" style="margin-bottom:3px;display:block;text-align:center">R1 (1分)</label><input class="num-ipt" id="mR1" type="number" min="0" value="${a.r1}" style="width:100%"></div>
+                    <div><label class="tag tag-r2" style="margin-bottom:3px;display:block;text-align:center">R2 (3分)</label><input class="num-ipt" id="mR2" type="number" min="0" value="${a.r2}" style="width:100%"></div>
+                    <div><label class="tag tag-r3" style="margin-bottom:3px;display:block;text-align:center">R3 (8分)</label><input class="num-ipt" id="mR3" type="number" min="0" value="${a.r3}" style="width:100%"></div>
+                </div>
+
+                <h3 style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--accent)"><i class="fas fa-arrow-up" style="margin-right:4px"></i>升级数量</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px">
+                    <div><label class="tag tag-up" style="margin-bottom:3px;display:block;text-align:center">R1↑R2 (4分)</label><input class="num-ipt" id="mR1toR2" type="number" min="0" value="${a.r1toR2}" style="width:100%"></div>
+                    <div><label class="tag tag-up" style="margin-bottom:3px;display:block;text-align:center">R1↑R3 (10分)</label><input class="num-ipt" id="mR1toR3" type="number" min="0" value="${a.r1toR3}" style="width:100%"></div>
+                    <div><label class="tag tag-up" style="margin-bottom:3px;display:block;text-align:center">R2↑R3 (6分)</label><input class="num-ipt" id="mR2toR3" type="number" min="0" value="${a.r2toR3}" style="width:100%"></div>
+                </div>
+
+                <div style="background:var(--bg2);border-radius:10px;padding:12px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:12px;color:var(--text2)">预估总分</span>
+                    <span class="score-big" id="mScorePreview" style="font-size:24px">0</span>
+                </div>
+
+                <div style="display:flex;gap:10px;justify-content:flex-end">
+                    <button class="btn btn-s" onclick="closeModal()">取消</button>
+                    <button class="btn btn-p" onclick="saveAccount('${isEdit?a.id:''}')"><i class="fas fa-check"></i> 保存</button>
+                </div>
+            </div>
+        </div>`;
+        document.getElementById('modalRoot').innerHTML = html;
+        ['mR1','mR2','mR3','mR1toR2','mR1toR3','mR2toR3'].forEach(id=>{
+            document.getElementById(id).addEventListener('input',updatePreview);
+        });
+        updatePreview();
+        document.getElementById('mName').focus();
+    }
+
+    function updatePreview() {
+        const v=getModalValues();
+        const score=v.r1*1+v.r2*3+v.r3*8+v.r1toR2*4+v.r1toR3*10+v.r2toR3*6;
+        const el=document.getElementById('mScorePreview');
+        if(el)el.textContent=score;
+    }
+
+    function getModalValues() {
+        function gv(id){return Math.max(0,parseInt(document.getElementById(id).value)||0)}
+        return {name:document.getElementById('mName').value.trim(),r1:gv('mR1'),r2:gv('mR2'),r3:gv('mR3'),r1toR2:gv('mR1toR2'),r1toR3:gv('mR1toR3'),r2toR3:gv('mR2toR3')};
+    }
+
+    function saveAccount(editId) {
+        const v=getModalValues();
+        const errEl=document.getElementById('mNameErr');
+        if(!v.name){errEl.textContent='请输入账号名称';errEl.style.display='block';document.getElementById('mName').focus();return}
+        const dup=accounts.find(a=>a.name===v.name&&a.id!==editId);
+        if(dup){errEl.textContent='该账号已存在，请使用其他名称';errEl.style.display='block';document.getElementById('mName').focus();return}
+        errEl.style.display='none';
+        if(editId){
+            const idx=accounts.findIndex(a=>a.id===editId);
+            if(idx>=0)accounts[idx]={...accounts[idx],name:v.name,r1:v.r1,r2:v.r2,r3:v.r3,r1toR2:v.r1toR2,r1toR3:v.r1toR3,r2toR3:v.r2toR3};
+            toast('账号已更新','ok');
+        }else{
+            accounts.push({id:uid(),name:v.name,r1:v.r1,r2:v.r2,r3:v.r3,r1toR2:v.r1toR2,r1toR3:v.r1toR3,r2toR3:v.r2toR3});
+            toast('账号已添加','ok');
+        }
+        saveData();closeModal();render();
+    }
+
+    /* ========== 确认删除 ========== */
+    function confirmDelete(id) {
+        const a=accounts.find(x=>x.id===id);
+        if(!a)return;
+        document.getElementById('modalRoot').innerHTML=`
+        <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+            <div class="modal-box" role="dialog" aria-label="确认删除" style="max-width:380px;text-align:center">
+                <i class="fas fa-exclamation-triangle" style="font-size:32px;color:var(--danger);margin-bottom:12px;display:block"></i>
+                <h3 style="font-size:16px;font-weight:700;margin-bottom:6px">确认删除</h3>
+                <p style="font-size:13px;color:var(--text2);margin-bottom:18px">确定要删除账号 <strong style="color:var(--text)">${escHtml(maskName(a.name))}</strong> 吗？</p>
+                <div style="display:flex;gap:10px;justify-content:center">
+                    <button class="btn btn-s" onclick="closeModal()">取消</button>
+                    <button class="btn btn-d" onclick="doDelete('${id}')"><i class="fas fa-trash"></i> 删除</button>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function doDelete(id) { accounts=accounts.filter(a=>a.id!==id);saveData();closeModal();render();toast('账号已删除','ok'); }
+
+    function confirmClearAll() {
+        if(accounts.length===0){toast('没有数据需要清空','info');return}
+        document.getElementById('modalRoot').innerHTML=`
+        <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+            <div class="modal-box" role="dialog" aria-label="确认清空" style="max-width:380px;text-align:center">
+                <i class="fas fa-fire" style="font-size:32px;color:var(--danger);margin-bottom:12px;display:block"></i>
+                <h3 style="font-size:16px;font-weight:700;margin-bottom:6px">确认清空所有数据</h3>
+                <p style="font-size:13px;color:var(--text2);margin-bottom:18px">将删除所有 <strong style="color:var(--text)">${accounts.length}</strong> 个账号，此操作不可撤销。</p>
+                <div style="display:flex;gap:10px;justify-content:center">
+                    <button class="btn btn-s" onclick="closeModal()">取消</button>
+                    <button class="btn btn-d" onclick="doClearAll()"><i class="fas fa-trash-alt"></i> 全部清空</button>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function doClearAll() { accounts=[];saveData();closeModal();render();toast('所有数据已清空','ok'); }
+    function closeModal() { document.getElementById('modalRoot').innerHTML=''; }
+
+    /* ========== 一键复制（马来语，并列排名，无奖牌图标） ========== */
+    function copyRanking() {
+        if(accounts.length===0){toast('没有数据可复制','info');return}
+        const sorted=accounts.slice().sort((a,b)=>calcScore(b)-calcScore(a));
+        const now=new Date();
+        const dateStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+
+        // 并列排名
+        const ranks=[];
+        let curRank=1;
+        for(let i=0;i<sorted.length;i++){
+            if(i>0&&calcScore(sorted[i])<calcScore(sorted[i-1]))curRank=i+1;
+            ranks.push(curRank);
+        }
+
+        // 对齐用
+        const maskedNames=sorted.map(a=>maskName(a.name));
+        const maxNameLen=Math.max(...maskedNames.map(n=>n.length));
+        const maxRankLen=Math.max(...ranks.map(r=>String(r).length));
+
+        let text='';
+        text+='📊 *Kedudukan Skor Jemputan*\n';
+        text+='━━━━━━━━━━━━━━━━━━━━━━\n\n';
+
+        sorted.forEach((a,i)=>{
+            const rank=ranks[i];
+            const score=calcScore(a);
+            const masked=maskName(a.name);
+            const rankStr=String(rank)+'.';
+            const rankPad=rankStr+' '.repeat(Math.max(0,maxRankLen+2-rankStr.length));
+            const namePad=masked+' '.repeat(Math.max(0,maxNameLen-masked.length));
+
+            text+=rankPad+' _'+namePad+'_  ──  *'+score+' mata*\n';
+        });
+
+        text+='\n━━━━━━━━━━━━━━━━━━━━━━\n';
+        text+='📅 '+dateStr;
+
+        navigator.clipboard.writeText(text).then(()=>{
+            toast('排行榜已复制到剪贴板','ok');
+        }).catch(()=>{
+            const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;left:-9999px';
+            document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+            toast('排行榜已复制到剪贴板','ok');
+        });
+    }
+
+    /* ========== 导入/导出 ========== */
+    function exportData() {
+        if(accounts.length===0){toast('没有数据可导出','info');return}
+        const json=JSON.stringify(accounts,null,2);
+        const blob=new Blob([json],{type:'application/json'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');a.href=url;a.download='invite_stats_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+        URL.revokeObjectURL(url);toast('数据已导出','ok');
+    }
+
+    function importData() { document.getElementById('fileInput').click(); }
+
+    function handleFileImport(e) {
+        const file=e.target.files[0];if(!file)return;
+        const reader=new FileReader();
+        reader.onload=function(ev){
+            try{
+                const data=JSON.parse(ev.target.result);
+                if(!Array.isArray(data))throw new Error('数据格式错误');
+                if(!data.every(a=>a.id&&a.name&&typeof a.r1==='number'))throw new Error('数据字段不完整');
+                showImportConfirm(data,file.name);
+            }catch(err){toast('导入失败：'+err.message,'err')}
+        };
+        reader.readAsText(file);e.target.value='';
+    }
+
+    function showImportConfirm(data,filename) {
+        document.getElementById('modalRoot').innerHTML=`
+        <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+            <div class="modal-box" role="dialog" aria-label="确认导入" style="max-width:420px;text-align:center">
+                <i class="fas fa-file-import" style="font-size:32px;color:var(--accent);margin-bottom:12px;display:block"></i>
+                <h3 style="font-size:16px;font-weight:700;margin-bottom:6px">确认导入数据</h3>
+                <p style="font-size:13px;color:var(--text2);margin-bottom:4px">文件 <strong style="color:var(--text)">${escHtml(filename)}</strong> 包含 <strong style="color:var(--text)">${data.length}</strong> 个账号</p>
+                <p style="font-size:12px;color:var(--text2);margin-bottom:18px">导入将替换当前所有数据</p>
+                <div style="display:flex;gap:10px;justify-content:center">
+                    <button class="btn btn-s" onclick="closeModal()">取消</button>
+                    <button class="btn btn-p" onclick="doImport()"><i class="fas fa-check"></i> 确认导入</button>
+                </div>
+            </div>
+        </div>`;
+        window._pendingImport=data;
+    }
+
+    function doImport() {
+        if(!window._pendingImport)return;
+        accounts=window._pendingImport;delete window._pendingImport;
+        saveData();closeModal();render();toast('数据导入成功，共 '+accounts.length+' 个账号','ok');
+    }
+
+    document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal()});
+
+    loadData();
+    render();
+    </script>
+</body>
+</html>
