@@ -23,6 +23,12 @@
             --border: #AAD5CB;
             --danger: #C44040;
             --success: #2D8B4A;
+            --noise: #E08A30;
+            --noise-dim: rgba(224,138,48,0.1);
+            --real-tag-bg: rgba(45,139,122,0.12);
+            --real-tag-fg: #2D8B7A;
+            --noise-tag-bg: rgba(224,138,48,0.12);
+            --noise-tag-fg: #C07020;
         }
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
@@ -32,17 +38,17 @@
         @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
         @keyframes slideR{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes numPop{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
         .fade-up{animation:fadeUp .4s ease-out both}
         .scale-in{animation:scaleIn .3s ease-out both}
+        .num-pop{animation:numPop .2s ease-out}
 
-        /* Toast */
         .toast-box{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
         .toast{padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;animation:slideR .3s ease-out;box-shadow:0 4px 24px rgba(0,0,0,.1);max-width:340px;display:flex;align-items:center;gap:8px}
         .toast-ok{background:#E0F5E8;border:1px solid var(--success);color:#1A5A32}
         .toast-err{background:#F5E0E0;border:1px solid var(--danger);color:#6A1A1A}
         .toast-info{background:#E0ECF5;border:1px solid #4A8AB8;color:#1A3A5A}
 
-        /* 按钮 */
         .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .2s;font-family:inherit;white-space:nowrap}
         .btn:active{transform:scale(.96)}
         .btn-p{background:var(--accent);color:#fff}
@@ -54,72 +60,92 @@
         .btn-g{background:transparent;color:var(--text2);padding:6px 10px;border-radius:6px}
         .btn-g:hover{color:var(--accent);background:var(--accent-dim)}
 
-        /* 输入 */
         .ipt{width:100%;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:all .2s}
         .ipt:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,139,122,.1)}
         .ipt::placeholder{color:var(--text2)}
-        .num-ipt{width:88px;padding:8px 6px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;font-family:inherit;text-align:center;outline:none;transition:all .2s}
-        .num-ipt:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,139,122,.1)}
 
-        /* 搜索框 */
         .search-wrap{position:relative}
         .search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:13px;pointer-events:none}
         .search-ipt{padding-left:34px}
 
-        /* 卡片 */
         .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;transition:all .25s;box-shadow:0 2px 10px rgba(0,0,0,.04)}
         .card:hover{box-shadow:0 4px 18px rgba(0,0,0,.08);border-color:rgba(45,139,122,.2)}
+        .card-real{border-left:3px solid var(--accent)}
+        .card-noise{border-left:3px solid var(--noise)}
 
-        /* Modal */
+        /* 行内编辑控件 */
+        .pm-group{display:flex;align-items:center;gap:4px}
+        .pm-label{font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap}
+        .pm-btn{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--text);transition:all .15s;flex-shrink:0;line-height:1}
+        .pm-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+        .pm-btn:active{transform:scale(.88)}
+        .pm-btn.pm-dis{opacity:.35;cursor:not-allowed;background:var(--bg2);color:var(--text2);border-color:var(--border)}
+        .pm-btn.pm-dis:hover{background:var(--bg2);color:var(--text2);border-color:var(--border)}
+        .pm-val{min-width:24px;text-align:center;font-size:15px;font-weight:700;color:var(--text);line-height:1}
+
         .modal-bg{position:fixed;inset:0;background:rgba(100,160,148,.45);backdrop-filter:blur(5px);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fadeUp .2s ease-out}
-        .modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:520px;width:92%;max-height:90vh;overflow-y:auto;animation:scaleIn .3s ease-out;box-shadow:0 8px 40px rgba(0,0,0,.12)}
+        .modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:480px;width:92%;max-height:90vh;overflow-y:auto;animation:scaleIn .3s ease-out;box-shadow:0 8px 40px rgba(0,0,0,.12)}
 
-        /* 排名 */
         .medal{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
         .m1{background:linear-gradient(135deg,#ffd700,#f0a800);color:#1a1a1a;box-shadow:0 2px 10px rgba(255,215,0,.3)}
         .m2{background:linear-gradient(135deg,#d0d0d0,#a8a8a8);color:#1a1a1a;box-shadow:0 2px 10px rgba(192,192,192,.3)}
         .m3{background:linear-gradient(135deg,#cd7f32,#a06028);color:#fff;box-shadow:0 2px 10px rgba(205,127,50,.3)}
         .m0{background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
 
-        /* 分数 */
         .score-big{font-size:30px;font-weight:900;color:var(--warm)}
         .score-sm{font-size:22px;font-weight:900;color:var(--warm)}
 
-        /* 标签 */
         .tag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
         .tag-r1{background:rgba(45,139,74,.1);color:#2D8B4A}
         .tag-r2{background:rgba(45,120,160,.1);color:#2D78A0}
         .tag-r3{background:rgba(212,136,40,.1);color:#C47820}
         .tag-up{background:rgba(130,80,170,.1);color:#8250AA}
 
-        /* 空状态 */
+        .type-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;user-select:none;border:1px solid transparent}
+        .type-tag:active{transform:scale(.95)}
+        .type-real{background:var(--real-tag-bg);color:var(--real-tag-fg);border-color:rgba(45,139,122,.2)}
+        .type-real:hover{background:rgba(45,139,122,.2)}
+        .type-noise{background:var(--noise-tag-bg);color:var(--noise-tag-fg);border-color:rgba(224,138,48,.2)}
+        .type-noise:hover{background:rgba(224,138,48,.2)}
+
+        .filter-bar{display:flex;gap:6px;flex-wrap:wrap}
+        .filter-btn{padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text2);transition:all .2s;font-family:inherit}
+        .filter-btn:hover{border-color:var(--accent);color:var(--accent)}
+        .filter-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+        .filter-btn.active-noise{background:var(--noise);color:#fff;border-color:var(--noise)}
+
+        .type-selector{display:flex;gap:8px}
+        .type-opt{flex:1;padding:10px 12px;border-radius:8px;text-align:center;cursor:pointer;border:2px solid var(--border);background:var(--card);transition:all .2s;font-size:13px;font-weight:600}
+        .type-opt:hover{border-color:var(--accent)}
+        .type-opt.sel-real{border-color:var(--accent);background:var(--real-tag-bg);color:var(--accent)}
+        .type-opt.sel-noise{border-color:var(--noise);background:var(--noise-tag-bg);color:var(--noise-tag-fg)}
+
         .empty{text-align:center;padding:48px 20px;color:var(--text2)}
         .empty i{font-size:44px;margin-bottom:14px;opacity:.2;display:block}
-
         .divider{height:1px;background:linear-gradient(to right,transparent,var(--border),transparent);margin:12px 0}
-
-        /* 行 */
         .rank-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;transition:all .2s}
         .rank-row:hover{background:rgba(45,139,122,.05)}
         .rank-row.top1{background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.15)}
-
         .accent-line{height:3px;background:linear-gradient(to right,var(--accent),var(--warm),transparent);border-radius:2px}
-
-        /* 统计框样式（匹配图片KPI风格） */
         .stat-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.04)}
         .stat-box .stat-num{font-size:28px;font-weight:900;color:var(--warm);line-height:1.2}
         .stat-box .stat-label{font-size:12px;color:var(--text2);margin-top:4px}
 
-        @media(max-width:840px){.main-grid{grid-template-columns:1fr!important}}
+        .field-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+        .field-section-label{font-size:10px;font-weight:600;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;min-width:28px}
+
+        @media(max-width:840px){
+            .main-grid{grid-template-columns:1fr!important}
+            .pm-group{gap:3px}
+            .pm-label{font-size:10px;padding:2px 4px}
+        }
         @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
     </style>
 </head>
 <body>
     <div class="toast-box" id="toastBox"></div>
-
     <div style="position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:20px 24px 40px">
 
-        <!-- 头部 -->
         <header class="fade-up" style="margin-bottom:24px">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
                 <div>
@@ -137,19 +163,22 @@
             <div class="accent-line" style="margin-top:14px;width:200px"></div>
         </header>
 
-        <!-- 统计概览（KPI风格） -->
         <div id="statsOverview" class="fade-up" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;animation-delay:.05s"></div>
 
-        <!-- 主体两栏 -->
         <div class="main-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
 
-            <!-- 左栏：账号管理 -->
             <section class="fade-up" style="animation-delay:.08s">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
                     <h2 style="font-size:17px;font-weight:700"><i class="fas fa-users" style="color:var(--accent);margin-right:6px;font-size:15px"></i>账号管理</h2>
                     <button class="btn btn-p" onclick="openAddModal()"><i class="fas fa-plus"></i> 添加账号</button>
                 </div>
-                <!-- 搜索栏 -->
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+                    <div class="filter-bar" id="filterBar">
+                        <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">全部</button>
+                        <button class="filter-btn" data-filter="real" onclick="setFilter('real')"><i class="fas fa-user-check" style="margin-right:3px;font-size:10px"></i>真实</button>
+                        <button class="filter-btn" data-filter="noise" onclick="setFilter('noise')"><i class="fas fa-user-xmark" style="margin-right:3px;font-size:10px"></i>小号</button>
+                    </div>
+                </div>
                 <div class="search-wrap" style="margin-bottom:12px">
                     <i class="fas fa-search"></i>
                     <input class="ipt search-ipt" id="searchInput" placeholder="搜索账号..." oninput="renderAccountList()">
@@ -157,15 +186,12 @@
                 <div id="accountList"></div>
             </section>
 
-            <!-- 右栏：排行榜 -->
             <section class="fade-up" style="animation-delay:.12s">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
                     <h2 style="font-size:17px;font-weight:700"><i class="fas fa-trophy" style="color:var(--warm);margin-right:6px;font-size:15px"></i>积分排行</h2>
                     <button class="btn btn-p" onclick="copyRanking()" id="copyBtn" style="display:none"><i class="fas fa-copy"></i> 一键复制</button>
                 </div>
                 <div id="rankList"></div>
-
-                <!-- 规则卡片 -->
                 <div class="card" style="margin-top:18px;background:var(--bg2);border-color:var(--border)">
                     <h3 style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--accent)"><i class="fas fa-info-circle" style="margin-right:4px"></i>计分规则</h3>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:11px;color:var(--text2)">
@@ -187,17 +213,27 @@
     <script>
     const STORAGE_KEY = 'invite_stats_v1';
     let accounts = [];
+    let currentFilter = 'all';
+
+    /* 字段配置 */
+    const FIELDS = [
+        { key:'r1',     label:'R1',    cls:'tag-r1', pts:1  },
+        { key:'r2',     label:'R2',    cls:'tag-r2', pts:3  },
+        { key:'r3',     label:'R3',    cls:'tag-r3', pts:8  },
+        { key:'r1toR2', label:'R1↑R2', cls:'tag-up', pts:4  },
+        { key:'r1toR3', label:'R1↑R3', cls:'tag-up', pts:10 },
+        { key:'r2toR3', label:'R2↑R3', cls:'tag-up', pts:6  },
+    ];
 
     function loadData() {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) accounts = JSON.parse(raw);
+            accounts.forEach(a => { if (!a.type) a.type = 'real'; });
         } catch (e) { accounts = []; }
     }
 
-    function saveData() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
-    }
+    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); }
 
     function calcScore(a) {
         return (a.r1||0)*1 + (a.r2||0)*3 + (a.r3||0)*8
@@ -210,8 +246,55 @@
         return name.slice(0,3) + '***' + name.slice(-3);
     }
 
-    function uid() {
-        return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+    function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+    /* ========== 行内编辑 ========== */
+    function incField(accId, field) {
+        const a = accounts.find(x => x.id === accId);
+        if (!a) return;
+        a[field] = (a[field] || 0) + 1;
+        saveData();
+        const valEl = document.getElementById('v-' + accId + '-' + field);
+        if (valEl) { valEl.textContent = a[field]; valEl.classList.remove('num-pop'); void valEl.offsetWidth; valEl.classList.add('num-pop'); }
+        const scoreEl = document.getElementById('s-' + accId);
+        if (scoreEl) scoreEl.textContent = calcScore(a);
+        // 更新减号按钮状态
+        const decBtn = document.getElementById('d-' + accId + '-' + field);
+        if (decBtn) decBtn.classList.remove('pm-dis');
+        renderRankList();
+        renderStatsOverview();
+    }
+
+    function decField(accId, field) {
+        const a = accounts.find(x => x.id === accId);
+        if (!a || (a[field] || 0) <= 0) return;
+        a[field] = (a[field] || 0) - 1;
+        saveData();
+        const valEl = document.getElementById('v-' + accId + '-' + field);
+        if (valEl) { valEl.textContent = a[field]; valEl.classList.remove('num-pop'); void valEl.offsetWidth; valEl.classList.add('num-pop'); }
+        const scoreEl = document.getElementById('s-' + accId);
+        if (scoreEl) scoreEl.textContent = calcScore(a);
+        const decBtn = document.getElementById('d-' + accId + '-' + field);
+        if (decBtn && a[field] <= 0) decBtn.classList.add('pm-dis');
+        renderRankList();
+        renderStatsOverview();
+    }
+
+    function toggleType(id) {
+        const a = accounts.find(x => x.id === id);
+        if (!a) return;
+        a.type = a.type === 'real' ? 'noise' : 'real';
+        saveData(); render();
+        toast(a.type === 'real' ? '已标记为真实账号' : '已标记为吵群小号', 'info');
+    }
+
+    function setFilter(f) {
+        currentFilter = f;
+        document.querySelectorAll('#filterBar .filter-btn').forEach(btn => {
+            btn.classList.remove('active', 'active-noise');
+            if (btn.dataset.filter === f) btn.classList.add(f === 'noise' ? 'active-noise' : 'active');
+        });
+        renderAccountList();
     }
 
     /* ========== Toast ========== */
@@ -225,30 +308,23 @@
         box.appendChild(el);
         setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300)},2800);
     }
-
-    function escHtml(s) {
-        const d=document.createElement('div');d.textContent=s;return d.innerHTML;
-    }
+    function escHtml(s) { const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
 
     /* ========== 渲染 ========== */
-    function render() {
-        renderStatsOverview();
-        renderAccountList();
-        renderRankList();
-    }
+    function render() { renderStatsOverview(); renderAccountList(); renderRankList(); }
 
-    /* 统计概览 KPI 风格 */
     function renderStatsOverview() {
         const el = document.getElementById('statsOverview');
         const total = accounts.length;
         const totalScore = accounts.reduce((s,a)=>s+calcScore(a),0);
         const activeCount = accounts.filter(a=>calcScore(a)>0).length;
         const activePercent = total > 0 ? Math.round(activeCount/total*100) : 0;
-
+        const realCount = accounts.filter(a=>a.type==='real').length;
+        const noiseCount = accounts.filter(a=>a.type==='noise').length;
         el.innerHTML = `
             <div class="stat-box">
                 <div class="stat-num">${total}</div>
-                <div class="stat-label">总账号数</div>
+                <div class="stat-label">总账号 <span style="color:var(--accent);font-weight:600">${realCount}真实</span> / <span style="color:var(--noise-tag-fg);font-weight:600">${noiseCount}小号</span></div>
             </div>
             <div class="stat-box">
                 <div class="stat-num">${totalScore}</div>
@@ -263,46 +339,77 @@
     function renderAccountList() {
         const el = document.getElementById('accountList');
         const search = (document.getElementById('searchInput').value||'').trim().toLowerCase();
-        const filtered = search ? accounts.filter(a=>a.name.toLowerCase().includes(search)) : accounts;
+        let filtered = accounts;
+        if (currentFilter === 'real') filtered = filtered.filter(a => a.type === 'real');
+        if (currentFilter === 'noise') filtered = filtered.filter(a => a.type === 'noise');
+        if (search) filtered = filtered.filter(a => a.name.toLowerCase().includes(search));
 
         if (accounts.length === 0) {
             el.innerHTML = '<div class="empty"><i class="fas fa-user-plus"></i><p style="font-size:14px">暂无账号</p><p style="font-size:12px;margin-top:4px">点击上方按钮添加账号</p></div>';
             return;
         }
         if (filtered.length === 0) {
-            el.innerHTML = '<div class="empty"><i class="fas fa-search"></i><p style="font-size:14px">未找到匹配账号</p><p style="font-size:12px;margin-top:4px">尝试其他关键词</p></div>';
+            el.innerHTML = '<div class="empty"><i class="fas fa-search"></i><p style="font-size:14px">未找到匹配账号</p></div>';
             return;
         }
 
         let html = '';
         filtered.forEach((a, i) => {
             const score = calcScore(a);
-            const delay = i*0.03;
-            html += `
-            <div class="card fade-up" style="margin-bottom:8px;animation-delay:${delay}s;padding:14px 16px">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-                    <div style="flex:1;min-width:0">
-                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-                            <span style="font-size:14px;font-weight:700;letter-spacing:.3px">${escHtml(maskName(a.name))}</span>
-                            <span class="score-sm" style="font-size:17px">${score}</span>
-                            <span style="font-size:10px;color:var(--text2)">分</span>
-                        </div>
-                        <div style="display:flex;flex-wrap:wrap;gap:3px">
-                            ${a.r1?'<span class="tag tag-r1">R1×'+a.r1+'</span>':''}
-                            ${a.r2?'<span class="tag tag-r2">R2×'+a.r2+'</span>':''}
-                            ${a.r3?'<span class="tag tag-r3">R3×'+a.r3+'</span>':''}
-                            ${a.r1toR2?'<span class="tag tag-up">R1↑R2×'+a.r1toR2+'</span>':''}
-                            ${a.r1toR3?'<span class="tag tag-up">R1↑R3×'+a.r1toR3+'</span>':''}
-                            ${a.r2toR3?'<span class="tag tag-up">R2↑R3×'+a.r2toR3+'</span>':''}
-                            ${score===0?'<span style="font-size:10px;color:var(--text2)">暂无数据</span>':''}
-                        </div>
-                    </div>
-                    <div style="display:flex;gap:2px;flex-shrink:0">
-                        <button class="btn btn-g" onclick="openEditModal('${a.id}')" title="编辑" aria-label="编辑"><i class="fas fa-pen" style="font-size:12px"></i></button>
-                        <button class="btn btn-g" onclick="confirmDelete('${a.id}')" title="删除" style="color:var(--danger)" aria-label="删除"><i class="fas fa-trash" style="font-size:12px"></i></button>
-                    </div>
+            const isReal = a.type !== 'noise';
+            const cardCls = isReal ? 'card-real' : 'card-noise';
+            const typeCls = isReal ? 'type-real' : 'type-noise';
+            const typeIcon = isReal ? 'fa-user-check' : 'fa-user-xmark';
+            const typeText = isReal ? '真实' : '小号';
+            const delay = i * 0.03;
+
+            html += `<div class="card ${cardCls} fade-up" style="margin-bottom:8px;padding:12px 14px;animation-delay:${delay}s">`;
+
+            // 第一行：类型标签、账号名、编辑名按钮、分数、删除
+            html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px">
+                <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
+                    <span class="type-tag ${typeCls}" onclick="toggleType('${a.id}')" title="点击切换类型"><i class="fas ${typeIcon}" style="font-size:10px"></i>${typeText}</span>
+                    <span style="font-size:14px;font-weight:700;letter-spacing:.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(a.name)}</span>
+                    <button class="btn-g" onclick="openNameModal('${a.id}')" title="修改账号名" style="padding:4px 6px"><i class="fas fa-pen" style="font-size:10px"></i></button>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                    <span id="s-${a.id}" style="font-size:18px;font-weight:900;color:var(--warm)">${score}</span>
+                    <span style="font-size:10px;color:var(--text2)">分</span>
+                    <button class="btn-g" onclick="confirmDelete('${a.id}')" title="删除" style="color:var(--danger);padding:4px 6px"><i class="fas fa-trash" style="font-size:10px"></i></button>
                 </div>
             </div>`;
+
+            // 邀请行：R1 R2 R3
+            html += `<div class="field-row" style="margin-bottom:5px">`;
+            html += `<span class="field-section-label">邀请</span>`;
+            FIELDS.slice(0,3).forEach(f => {
+                const val = a[f.key] || 0;
+                const disCls = val <= 0 ? 'pm-dis' : '';
+                html += `<div class="pm-group">
+                    <span class="pm-label ${f.cls}">${f.label}</span>
+                    <button class="pm-btn ${disCls}" id="d-${a.id}-${f.key}" onclick="decField('${a.id}','${f.key}')">−</button>
+                    <span class="pm-val" id="v-${a.id}-${f.key}">${val}</span>
+                    <button class="pm-btn" onclick="incField('${a.id}','${f.key}')">+</button>
+                </div>`;
+            });
+            html += `</div>`;
+
+            // 升级行：R1↑R2 R1↑R3 R2↑R3
+            html += `<div class="field-row">`;
+            html += `<span class="field-section-label">升级</span>`;
+            FIELDS.slice(3,6).forEach(f => {
+                const val = a[f.key] || 0;
+                const disCls = val <= 0 ? 'pm-dis' : '';
+                html += `<div class="pm-group">
+                    <span class="pm-label ${f.cls}">${f.label}</span>
+                    <button class="pm-btn ${disCls}" id="d-${a.id}-${f.key}" onclick="decField('${a.id}','${f.key}')">−</button>
+                    <span class="pm-val" id="v-${a.id}-${f.key}">${val}</span>
+                    <button class="pm-btn" onclick="incField('${a.id}','${f.key}')">+</button>
+                </div>`;
+            });
+            html += `</div>`;
+
+            html += `</div>`;
         });
         el.innerHTML = html;
     }
@@ -316,30 +423,25 @@
             return;
         }
         copyBtn.style.display = 'inline-flex';
-
         const sorted = accounts.slice().sort((a,b)=>calcScore(b)-calcScore(a));
-
-        // 计算并列排名
         const ranks = [];
         let curRank = 1;
         for (let i = 0; i < sorted.length; i++) {
-            if (i > 0 && calcScore(sorted[i]) < calcScore(sorted[i-1])) {
-                curRank = i + 1;
-            }
+            if (i > 0 && calcScore(sorted[i]) < calcScore(sorted[i-1])) curRank = i + 1;
             ranks.push(curRank);
         }
-
         let html = '<div class="card" style="padding:6px 8px">';
         sorted.forEach((a, i) => {
             const score = calcScore(a);
             const rank = ranks[i];
             const medalCls = rank===1?'m1':rank===2?'m2':rank===3?'m3':'m0';
             const rowCls = rank===1?'rank-row top1':'rank-row';
-            const medalContent = rank<=3?rank:rank;
-            html += `
-            <div class="${rowCls}">
-                <div class="medal ${medalCls}">${medalContent}</div>
-                <div style="flex:1;min-width:0">
+            const isReal = a.type !== 'noise';
+            const dotColor = isReal ? 'var(--accent)' : 'var(--noise)';
+            html += `<div class="${rowCls}">
+                <div class="medal ${medalCls}">${rank}</div>
+                <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px">
+                    <span style="width:7px;height:7px;border-radius:50%;background:${dotColor};flex-shrink:0" title="${isReal?'真实账号':'吵群小号'}"></span>
                     <span style="font-size:13px;font-weight:600;letter-spacing:.2px">${escHtml(maskName(a.name))}</span>
                 </div>
                 <div style="text-align:right">
@@ -353,102 +455,109 @@
         el.innerHTML = html;
     }
 
-    /* ========== Modal：添加/编辑 ========== */
-    function openAddModal() { showAccountModal(null); }
-    function openEditModal(id) {
-        const a = accounts.find(x=>x.id===id);
-        if (!a) return;
-        showAccountModal(a);
-    }
-
-    function showAccountModal(editTarget) {
-        const isEdit = !!editTarget;
-        const a = isEdit ? editTarget : {name:'',r1:0,r2:0,r3:0,r1toR2:0,r1toR3:0,r2toR3:0};
-        const title = isEdit?'编辑账号':'添加账号';
-
+    /* ========== Modal：添加账号 ========== */
+    function openAddModal() {
         const html = `
         <div class="modal-bg" onclick="if(event.target===this)closeModal()">
-            <div class="modal-box" role="dialog" aria-label="${title}">
+            <div class="modal-box" role="dialog" aria-label="添加账号">
                 <h2 style="font-size:19px;font-weight:700;margin-bottom:20px">
-                    <i class="fas fa-${isEdit?'pen':'plus-circle'}" style="color:var(--accent);margin-right:8px"></i>${title}
+                    <i class="fas fa-plus-circle" style="color:var(--accent);margin-right:8px"></i>添加账号
                 </h2>
                 <label style="display:block;margin-bottom:4px;font-size:12px;font-weight:500;color:var(--text2)">账号名称</label>
-                <input class="ipt" id="mName" value="${escHtml(a.name)}" placeholder="输入账号（唯一标识）" maxlength="64" style="margin-bottom:14px">
-                <div id="mNameErr" style="color:var(--danger);font-size:12px;margin-top:-10px;margin-bottom:8px;display:none"></div>
-
-                <h3 style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--accent)"><i class="fas fa-user-plus" style="margin-right:4px"></i>邀请数量</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
-                    <div><label class="tag tag-r1" style="margin-bottom:3px;display:block;text-align:center">R1 (1分)</label><input class="num-ipt" id="mR1" type="number" min="0" value="${a.r1}" style="width:100%"></div>
-                    <div><label class="tag tag-r2" style="margin-bottom:3px;display:block;text-align:center">R2 (3分)</label><input class="num-ipt" id="mR2" type="number" min="0" value="${a.r2}" style="width:100%"></div>
-                    <div><label class="tag tag-r3" style="margin-bottom:3px;display:block;text-align:center">R3 (8分)</label><input class="num-ipt" id="mR3" type="number" min="0" value="${a.r3}" style="width:100%"></div>
+                <input class="ipt" id="mName" placeholder="输入账号（唯一标识）" maxlength="64" style="margin-bottom:12px">
+                <div id="mNameErr" style="color:var(--danger);font-size:12px;margin-top:-8px;margin-bottom:8px;display:none"></div>
+                <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:500;color:var(--text2)">账号类型</label>
+                <div class="type-selector" style="margin-bottom:18px">
+                    <div class="type-opt sel-real" id="typeReal" onclick="selectType('real')"><i class="fas fa-user-check" style="margin-right:4px"></i>真实账号</div>
+                    <div class="type-opt" id="typeNoise" onclick="selectType('noise')"><i class="fas fa-user-xmark" style="margin-right:4px"></i>吵群小号</div>
                 </div>
-
-                <h3 style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--accent)"><i class="fas fa-arrow-up" style="margin-right:4px"></i>升级数量</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px">
-                    <div><label class="tag tag-up" style="margin-bottom:3px;display:block;text-align:center">R1↑R2 (4分)</label><input class="num-ipt" id="mR1toR2" type="number" min="0" value="${a.r1toR2}" style="width:100%"></div>
-                    <div><label class="tag tag-up" style="margin-bottom:3px;display:block;text-align:center">R1↑R3 (10分)</label><input class="num-ipt" id="mR1toR3" type="number" min="0" value="${a.r1toR3}" style="width:100%"></div>
-                    <div><label class="tag tag-up" style="margin-bottom:3px;display:block;text-align:center">R2↑R3 (6分)</label><input class="num-ipt" id="mR2toR3" type="number" min="0" value="${a.r2toR3}" style="width:100%"></div>
-                </div>
-
-                <div style="background:var(--bg2);border-radius:10px;padding:12px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between">
-                    <span style="font-size:12px;color:var(--text2)">预估总分</span>
-                    <span class="score-big" id="mScorePreview" style="font-size:24px">0</span>
-                </div>
-
+                <input type="hidden" id="mType" value="real">
+                <p style="font-size:11px;color:var(--text2);margin-bottom:16px"><i class="fas fa-info-circle" style="margin-right:4px"></i>添加后可在列表中直接用 ＋/− 按钮调整各项数量</p>
                 <div style="display:flex;gap:10px;justify-content:flex-end">
                     <button class="btn btn-s" onclick="closeModal()">取消</button>
-                    <button class="btn btn-p" onclick="saveAccount('${isEdit?a.id:''}')"><i class="fas fa-check"></i> 保存</button>
+                    <button class="btn btn-p" onclick="saveNewAccount()"><i class="fas fa-check"></i> 添加</button>
                 </div>
             </div>
         </div>`;
         document.getElementById('modalRoot').innerHTML = html;
-        ['mR1','mR2','mR3','mR1toR2','mR1toR3','mR2toR3'].forEach(id=>{
-            document.getElementById(id).addEventListener('input',updatePreview);
-        });
-        updatePreview();
         document.getElementById('mName').focus();
     }
 
-    function updatePreview() {
-        const v=getModalValues();
-        const score=v.r1*1+v.r2*3+v.r3*8+v.r1toR2*4+v.r1toR3*10+v.r2toR3*6;
-        const el=document.getElementById('mScorePreview');
-        if(el)el.textContent=score;
+    function selectType(t) {
+        document.getElementById('mType').value = t;
+        const rEl = document.getElementById('typeReal');
+        const nEl = document.getElementById('typeNoise');
+        rEl.className = 'type-opt' + (t==='real'?' sel-real':'');
+        nEl.className = 'type-opt' + (t==='noise'?' sel-noise':'');
     }
 
-    function getModalValues() {
-        function gv(id){return Math.max(0,parseInt(document.getElementById(id).value)||0)}
-        return {name:document.getElementById('mName').value.trim(),r1:gv('mR1'),r2:gv('mR2'),r3:gv('mR3'),r1toR2:gv('mR1toR2'),r1toR3:gv('mR1toR3'),r2toR3:gv('mR2toR3')};
-    }
-
-    function saveAccount(editId) {
-        const v=getModalValues();
-        const errEl=document.getElementById('mNameErr');
-        if(!v.name){errEl.textContent='请输入账号名称';errEl.style.display='block';document.getElementById('mName').focus();return}
-        const dup=accounts.find(a=>a.name===v.name&&a.id!==editId);
-        if(dup){errEl.textContent='该账号已存在，请使用其他名称';errEl.style.display='block';document.getElementById('mName').focus();return}
+    function saveNewAccount() {
+        const name = document.getElementById('mName').value.trim();
+        const type = document.getElementById('mType').value || 'real';
+        const errEl = document.getElementById('mNameErr');
+        if (!name) { errEl.textContent='请输入账号名称'; errEl.style.display='block'; document.getElementById('mName').focus(); return; }
+        if (accounts.find(a=>a.name===name)) { errEl.textContent='该账号已存在'; errEl.style.display='block'; document.getElementById('mName').focus(); return; }
         errEl.style.display='none';
-        if(editId){
-            const idx=accounts.findIndex(a=>a.id===editId);
-            if(idx>=0)accounts[idx]={...accounts[idx],name:v.name,r1:v.r1,r2:v.r2,r3:v.r3,r1toR2:v.r1toR2,r1toR3:v.r1toR3,r2toR3:v.r2toR3};
-            toast('账号已更新','ok');
-        }else{
-            accounts.push({id:uid(),name:v.name,r1:v.r1,r2:v.r2,r3:v.r3,r1toR2:v.r1toR2,r1toR3:v.r1toR3,r2toR3:v.r2toR3});
-            toast('账号已添加','ok');
-        }
-        saveData();closeModal();render();
+        accounts.push({id:uid(),name,type,r1:0,r2:0,r3:0,r1toR2:0,r1toR3:0,r2toR3:0});
+        saveData(); closeModal(); render();
+        toast('账号已添加，可用 ＋/− 调整数量','ok');
+    }
+
+    /* ========== Modal：修改账号名 ========== */
+    function openNameModal(id) {
+        const a = accounts.find(x=>x.id===id);
+        if (!a) return;
+        const isReal = a.type !== 'noise';
+        const realSel = isReal ? 'sel-real' : '';
+        const noiseSel = !isReal ? 'sel-noise' : '';
+        const html = `
+        <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+            <div class="modal-box" role="dialog" aria-label="修改账号" style="max-width:400px">
+                <h2 style="font-size:18px;font-weight:700;margin-bottom:18px">
+                    <i class="fas fa-pen" style="color:var(--accent);margin-right:8px"></i>修改账号
+                </h2>
+                <label style="display:block;margin-bottom:4px;font-size:12px;font-weight:500;color:var(--text2)">账号名称</label>
+                <input class="ipt" id="mName" value="${escHtml(a.name)}" maxlength="64" style="margin-bottom:12px">
+                <div id="mNameErr" style="color:var(--danger);font-size:12px;margin-top:-8px;margin-bottom:8px;display:none"></div>
+                <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:500;color:var(--text2)">账号类型</label>
+                <div class="type-selector" style="margin-bottom:18px">
+                    <div class="type-opt ${realSel}" id="typeReal" onclick="selectType('real')"><i class="fas fa-user-check" style="margin-right:4px"></i>真实账号</div>
+                    <div class="type-opt ${noiseSel}" id="typeNoise" onclick="selectType('noise')"><i class="fas fa-user-xmark" style="margin-right:4px"></i>吵群小号</div>
+                </div>
+                <input type="hidden" id="mType" value="${a.type}">
+                <div style="display:flex;gap:10px;justify-content:flex-end">
+                    <button class="btn btn-s" onclick="closeModal()">取消</button>
+                    <button class="btn btn-p" onclick="saveNameEdit('${a.id}')"><i class="fas fa-check"></i> 保存</button>
+                </div>
+            </div>
+        </div>`;
+        document.getElementById('modalRoot').innerHTML = html;
+        document.getElementById('mName').focus();
+    }
+
+    function saveNameEdit(id) {
+        const name = document.getElementById('mName').value.trim();
+        const type = document.getElementById('mType').value || 'real';
+        const errEl = document.getElementById('mNameErr');
+        if (!name) { errEl.textContent='请输入账号名称'; errEl.style.display='block'; document.getElementById('mName').focus(); return; }
+        if (accounts.find(a=>a.name===name&&a.id!==id)) { errEl.textContent='该账号已存在'; errEl.style.display='block'; document.getElementById('mName').focus(); return; }
+        errEl.style.display='none';
+        const a = accounts.find(x=>x.id===id);
+        if (a) { a.name = name; a.type = type; }
+        saveData(); closeModal(); render();
+        toast('账号信息已更新','ok');
     }
 
     /* ========== 确认删除 ========== */
     function confirmDelete(id) {
-        const a=accounts.find(x=>x.id===id);
-        if(!a)return;
-        document.getElementById('modalRoot').innerHTML=`
+        const a = accounts.find(x=>x.id===id);
+        if (!a) return;
+        document.getElementById('modalRoot').innerHTML = `
         <div class="modal-bg" onclick="if(event.target===this)closeModal()">
             <div class="modal-box" role="dialog" aria-label="确认删除" style="max-width:380px;text-align:center">
                 <i class="fas fa-exclamation-triangle" style="font-size:32px;color:var(--danger);margin-bottom:12px;display:block"></i>
                 <h3 style="font-size:16px;font-weight:700;margin-bottom:6px">确认删除</h3>
-                <p style="font-size:13px;color:var(--text2);margin-bottom:18px">确定要删除账号 <strong style="color:var(--text)">${escHtml(maskName(a.name))}</strong> 吗？</p>
+                <p style="font-size:13px;color:var(--text2);margin-bottom:18px">确定要删除账号 <strong style="color:var(--text)">${escHtml(a.name)}</strong> 吗？</p>
                 <div style="display:flex;gap:10px;justify-content:center">
                     <button class="btn btn-s" onclick="closeModal()">取消</button>
                     <button class="btn btn-d" onclick="doDelete('${id}')"><i class="fas fa-trash"></i> 删除</button>
@@ -461,7 +570,7 @@
 
     function confirmClearAll() {
         if(accounts.length===0){toast('没有数据需要清空','info');return}
-        document.getElementById('modalRoot').innerHTML=`
+        document.getElementById('modalRoot').innerHTML = `
         <div class="modal-bg" onclick="if(event.target===this)closeModal()">
             <div class="modal-box" role="dialog" aria-label="确认清空" style="max-width:380px;text-align:center">
                 <i class="fas fa-fire" style="font-size:32px;color:var(--danger);margin-bottom:12px;display:block"></i>
@@ -478,22 +587,16 @@
     function doClearAll() { accounts=[];saveData();closeModal();render();toast('所有数据已清空','ok'); }
     function closeModal() { document.getElementById('modalRoot').innerHTML=''; }
 
-    /* ========== 一键复制（马来语，并列排名，无奖牌图标） ========== */
+    /* ========== 一键复制 ========== */
     function copyRanking() {
         if(accounts.length===0){toast('没有数据可复制','info');return}
         const sorted=accounts.slice().sort((a,b)=>calcScore(b)-calcScore(a));
-        const now=new Date();
-        const dateStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-
-        // 并列排名
         const ranks=[];
         let curRank=1;
         for(let i=0;i<sorted.length;i++){
             if(i>0&&calcScore(sorted[i])<calcScore(sorted[i-1]))curRank=i+1;
             ranks.push(curRank);
         }
-
-        // 对齐用
         const maskedNames=sorted.map(a=>maskName(a.name));
         const maxNameLen=Math.max(...maskedNames.map(n=>n.length));
         const maxRankLen=Math.max(...ranks.map(r=>String(r).length));
@@ -501,7 +604,6 @@
         let text='';
         text+='📊 *Kedudukan Skor Jemputan*\n';
         text+='━━━━━━━━━━━━━━━━━━━━━━\n\n';
-
         sorted.forEach((a,i)=>{
             const rank=ranks[i];
             const score=calcScore(a);
@@ -509,12 +611,13 @@
             const rankStr=String(rank)+'.';
             const rankPad=rankStr+' '.repeat(Math.max(0,maxRankLen+2-rankStr.length));
             const namePad=masked+' '.repeat(Math.max(0,maxNameLen-masked.length));
-
             text+=rankPad+' _'+namePad+'_  ──  *'+score+' mata*\n';
         });
-
-        text+='\n━━━━━━━━━━━━━━━━━━━━━━\n';
-        text+='📅 '+dateStr;
+        text+='\n━━━━━━━━━━━━━━━━━━━━━━\n\n';
+        text+='🎉 Tahniah kepada rakan-rakan yang telah memasuki senarai pendahulu di atas! 🎉\n';
+        text+='Senarai pendahulu dikemas kini secara masa nyata! 🔄\n';
+        text+='Pantau kedudukan anda dengan rapi, dan ambil tindakan sekarang! 💪\n';
+        text+='Hadiah utama semakin hampir kepada anda! 🏆✨';
 
         navigator.clipboard.writeText(text).then(()=>{
             toast('排行榜已复制到剪贴板','ok');
@@ -545,6 +648,7 @@
                 const data=JSON.parse(ev.target.result);
                 if(!Array.isArray(data))throw new Error('数据格式错误');
                 if(!data.every(a=>a.id&&a.name&&typeof a.r1==='number'))throw new Error('数据字段不完整');
+                data.forEach(a=>{if(!a.type)a.type='real'});
                 showImportConfirm(data,file.name);
             }catch(err){toast('导入失败：'+err.message,'err')}
         };
@@ -575,9 +679,7 @@
     }
 
     document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal()});
-
-    loadData();
-    render();
+    loadData(); render();
     </script>
 </body>
 </html>
