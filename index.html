@@ -231,6 +231,8 @@
             accounts.forEach((a, i) => {
                 if (!a.type) a.type = 'real';
                 if (!a.createdAt) a.createdAt = i + 1;
+                // 兼容旧数据：无 scoreReachedAt 则用 createdAt 填充
+                if (!a.scoreReachedAt) a.scoreReachedAt = a.createdAt || i + 1;
             });
             saveData();
         } catch (e) { accounts = []; }
@@ -243,10 +245,11 @@
              + (a.r1toR2||0)*4 + (a.r1toR3||0)*10 + (a.r2toR3||0)*6;
     }
 
+    /* 排序：分数降序，同分则先达到当前分数者（scoreReachedAt 更小）排前面 */
     function rankSort(a, b) {
         const diff = calcScore(b) - calcScore(a);
         if (diff !== 0) return diff;
-        return (a.createdAt || 0) - (b.createdAt || 0);
+        return (a.scoreReachedAt || 0) - (b.scoreReachedAt || 0);
     }
 
     function maskName(name) {
@@ -262,6 +265,8 @@
         const a = accounts.find(x => x.id === accId);
         if (!a) return;
         a[field] = (a[field] || 0) + 1;
+        // 分数发生变化，记录达到当前分数的时间
+        a.scoreReachedAt = Date.now();
         saveData();
         const valEl = document.getElementById('v-' + accId + '-' + field);
         if (valEl) { valEl.textContent = a[field]; valEl.classList.remove('num-pop'); void valEl.offsetWidth; valEl.classList.add('num-pop'); }
@@ -277,6 +282,8 @@
         const a = accounts.find(x => x.id === accId);
         if (!a || (a[field] || 0) <= 0) return;
         a[field] = (a[field] || 0) - 1;
+        // 分数发生变化，记录达到当前分数的时间
+        a.scoreReachedAt = Date.now();
         saveData();
         const valEl = document.getElementById('v-' + accId + '-' + field);
         if (valEl) { valEl.textContent = a[field]; valEl.classList.remove('num-pop'); void valEl.offsetWidth; valEl.classList.add('num-pop'); }
@@ -505,7 +512,8 @@
         if (!name) { errEl.textContent='请输入账号名称'; errEl.style.display='block'; document.getElementById('mName').focus(); return; }
         if (accounts.find(a=>a.name===name)) { errEl.textContent='该账号已存在'; errEl.style.display='block'; document.getElementById('mName').focus(); return; }
         errEl.style.display='none';
-        accounts.push({id:uid(), name, type, r1:0, r2:0, r3:0, r1toR2:0, r1toR3:0, r2toR3:0, createdAt:Date.now()});
+        const now = Date.now();
+        accounts.push({id:uid(), name, type, r1:0, r2:0, r3:0, r1toR2:0, r1toR3:0, r2toR3:0, createdAt:now, scoreReachedAt:now});
         saveData(); closeModal(); render();
         toast('账号已添加，可用 ＋/− 调整数量','ok');
     }
@@ -635,7 +643,6 @@
         const sorted = accounts.slice().sort(rankSort);
         const top7 = sorted.slice(0, Math.min(7, sorted.length));
 
-        // 计算并列排名
         const ranks = [];
         let curRank = 1;
         for (let i = 0; i < sorted.length; i++) {
@@ -700,7 +707,11 @@
                 const data=JSON.parse(ev.target.result);
                 if(!Array.isArray(data))throw new Error('数据格式错误');
                 if(!data.every(a=>a.id&&a.name&&typeof a.r1==='number'))throw new Error('数据字段不完整');
-                data.forEach((a,i)=>{if(!a.type)a.type='real';if(!a.createdAt)a.createdAt=i+1});
+                data.forEach((a,i)=>{
+                    if(!a.type)a.type='real';
+                    if(!a.createdAt)a.createdAt=i+1;
+                    if(!a.scoreReachedAt)a.scoreReachedAt=a.createdAt||i+1;
+                });
                 showImportConfirm(data,file.name);
             }catch(err){toast('导入失败：'+err.message,'err')}
         };
