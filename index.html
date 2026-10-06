@@ -73,7 +73,6 @@
         .card-real{border-left:3px solid var(--accent)}
         .card-noise{border-left:3px solid var(--noise)}
 
-        /* 行内编辑控件 */
         .pm-group{display:flex;align-items:center;gap:4px}
         .pm-label{font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap}
         .pm-btn{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--text);transition:all .15s;flex-shrink:0;line-height:1}
@@ -155,6 +154,7 @@
                     <p style="font-size:12px;color:var(--text2);margin-top:4px">R1=1分 | R2=3分 | R3=8分 | R1↑R2=4分 | R1↑R3=10分 | R2↑R3=6分</p>
                 </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="btn btn-s" id="copyTop7Btn" onclick="copyTop7Names()" style="display:none" aria-label="复制前7名账号"><i class="fas fa-clipboard-list"></i> 复制前7名</button>
                     <button class="btn btn-s" onclick="importData()" aria-label="导入数据"><i class="fas fa-file-import"></i> 导入</button>
                     <button class="btn btn-s" onclick="exportData()" aria-label="导出数据"><i class="fas fa-file-export"></i> 导出</button>
                     <button class="btn btn-d" onclick="confirmClearAll()" aria-label="清空数据"><i class="fas fa-trash-alt"></i> 清空</button>
@@ -215,7 +215,6 @@
     let accounts = [];
     let currentFilter = 'all';
 
-    /* 字段配置 */
     const FIELDS = [
         { key:'r1',     label:'R1',    cls:'tag-r1', pts:1  },
         { key:'r2',     label:'R2',    cls:'tag-r2', pts:3  },
@@ -229,7 +228,11 @@
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) accounts = JSON.parse(raw);
-            accounts.forEach(a => { if (!a.type) a.type = 'real'; });
+            accounts.forEach((a, i) => {
+                if (!a.type) a.type = 'real';
+                if (!a.createdAt) a.createdAt = i + 1;
+            });
+            saveData();
         } catch (e) { accounts = []; }
     }
 
@@ -238,6 +241,12 @@
     function calcScore(a) {
         return (a.r1||0)*1 + (a.r2||0)*3 + (a.r3||0)*8
              + (a.r1toR2||0)*4 + (a.r1toR3||0)*10 + (a.r2toR3||0)*6;
+    }
+
+    function rankSort(a, b) {
+        const diff = calcScore(b) - calcScore(a);
+        if (diff !== 0) return diff;
+        return (a.createdAt || 0) - (b.createdAt || 0);
     }
 
     function maskName(name) {
@@ -258,7 +267,6 @@
         if (valEl) { valEl.textContent = a[field]; valEl.classList.remove('num-pop'); void valEl.offsetWidth; valEl.classList.add('num-pop'); }
         const scoreEl = document.getElementById('s-' + accId);
         if (scoreEl) scoreEl.textContent = calcScore(a);
-        // 更新减号按钮状态
         const decBtn = document.getElementById('d-' + accId + '-' + field);
         if (decBtn) decBtn.classList.remove('pm-dis');
         renderRankList();
@@ -311,7 +319,11 @@
     function escHtml(s) { const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
 
     /* ========== 渲染 ========== */
-    function render() { renderStatsOverview(); renderAccountList(); renderRankList(); }
+    function render() { renderStatsOverview(); renderAccountList(); renderRankList(); updateHeaderBtns(); }
+
+    function updateHeaderBtns() {
+        document.getElementById('copyTop7Btn').style.display = accounts.length > 0 ? 'inline-flex' : 'none';
+    }
 
     function renderStatsOverview() {
         const el = document.getElementById('statsOverview');
@@ -364,8 +376,6 @@
             const delay = i * 0.03;
 
             html += `<div class="card ${cardCls} fade-up" style="margin-bottom:8px;padding:12px 14px;animation-delay:${delay}s">`;
-
-            // 第一行：类型标签、账号名、编辑名按钮、分数、删除
             html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px">
                 <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
                     <span class="type-tag ${typeCls}" onclick="toggleType('${a.id}')" title="点击切换类型"><i class="fas ${typeIcon}" style="font-size:10px"></i>${typeText}</span>
@@ -379,7 +389,6 @@
                 </div>
             </div>`;
 
-            // 邀请行：R1 R2 R3
             html += `<div class="field-row" style="margin-bottom:5px">`;
             html += `<span class="field-section-label">邀请</span>`;
             FIELDS.slice(0,3).forEach(f => {
@@ -394,7 +403,6 @@
             });
             html += `</div>`;
 
-            // 升级行：R1↑R2 R1↑R3 R2↑R3
             html += `<div class="field-row">`;
             html += `<span class="field-section-label">升级</span>`;
             FIELDS.slice(3,6).forEach(f => {
@@ -408,7 +416,6 @@
                 </div>`;
             });
             html += `</div>`;
-
             html += `</div>`;
         });
         el.innerHTML = html;
@@ -423,7 +430,7 @@
             return;
         }
         copyBtn.style.display = 'inline-flex';
-        const sorted = accounts.slice().sort((a,b)=>calcScore(b)-calcScore(a));
+        const sorted = accounts.slice().sort(rankSort);
         const ranks = [];
         let curRank = 1;
         for (let i = 0; i < sorted.length; i++) {
@@ -498,7 +505,7 @@
         if (!name) { errEl.textContent='请输入账号名称'; errEl.style.display='block'; document.getElementById('mName').focus(); return; }
         if (accounts.find(a=>a.name===name)) { errEl.textContent='该账号已存在'; errEl.style.display='block'; document.getElementById('mName').focus(); return; }
         errEl.style.display='none';
-        accounts.push({id:uid(),name,type,r1:0,r2:0,r3:0,r1toR2:0,r1toR3:0,r2toR3:0});
+        accounts.push({id:uid(), name, type, r1:0, r2:0, r3:0, r1toR2:0, r1toR3:0, r2toR3:0, createdAt:Date.now()});
         saveData(); closeModal(); render();
         toast('账号已添加，可用 ＋/− 调整数量','ok');
     }
@@ -587,10 +594,10 @@
     function doClearAll() { accounts=[];saveData();closeModal();render();toast('所有数据已清空','ok'); }
     function closeModal() { document.getElementById('modalRoot').innerHTML=''; }
 
-    /* ========== 一键复制 ========== */
+    /* ========== 一键复制排行榜 ========== */
     function copyRanking() {
         if(accounts.length===0){toast('没有数据可复制','info');return}
-        const sorted=accounts.slice().sort((a,b)=>calcScore(b)-calcScore(a));
+        const sorted=accounts.slice().sort(rankSort);
         const ranks=[];
         let curRank=1;
         for(let i=0;i<sorted.length;i++){
@@ -619,12 +626,57 @@
         text+='Pantau kedudukan anda dengan rapi, dan ambil tindakan sekarang! 💪\n';
         text+='Hadiah utama semakin hampir kepada anda! 🏆✨';
 
-        navigator.clipboard.writeText(text).then(()=>{
-            toast('排行榜已复制到剪贴板','ok');
-        }).catch(()=>{
-            const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;left:-9999px';
-            document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
-            toast('排行榜已复制到剪贴板','ok');
+        copyToClip(text, '排行榜已复制到剪贴板');
+    }
+
+    /* ========== 一键复制前7名完整账号 ========== */
+    function copyTop7Names() {
+        if(accounts.length===0){toast('没有数据可复制','info');return}
+        const sorted = accounts.slice().sort(rankSort);
+        const top7 = sorted.slice(0, Math.min(7, sorted.length));
+
+        // 计算并列排名
+        const ranks = [];
+        let curRank = 1;
+        for (let i = 0; i < sorted.length; i++) {
+            if (i > 0 && calcScore(sorted[i]) < calcScore(sorted[i-1])) curRank = i + 1;
+            ranks.push(curRank);
+        }
+
+        const maxNameLen = Math.max(...top7.map(a => a.name.length));
+        const maxRankLen = Math.max(...ranks.slice(0, top7.length).map(r => String(r).length));
+
+        let text = '';
+        text += '📋 *Top 7 Akaun Pendahulu*\n';
+        text += '━━━━━━━━━━━━━━━━━━━━━━\n\n';
+
+        top7.forEach((a, i) => {
+            const rank = ranks[i];
+            const score = calcScore(a);
+            const rankStr = String(rank) + '.';
+            const rankPad = rankStr + ' '.repeat(Math.max(0, maxRankLen + 2 - rankStr.length));
+            const namePad = a.name + ' '.repeat(Math.max(0, maxNameLen - a.name.length));
+            text += rankPad + namePad + '  ──  *' + score + ' mata*\n';
+        });
+
+        text += '\n━━━━━━━━━━━━━━━━━━━━━━';
+
+        copyToClip(text, '前' + top7.length + '名完整账号已复制');
+    }
+
+    /* ========== 通用剪贴板写入 ========== */
+    function copyToClip(text, msg) {
+        navigator.clipboard.writeText(text).then(() => {
+            toast(msg, 'ok');
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;left:-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+            toast(msg, 'ok');
         });
     }
 
@@ -648,7 +700,7 @@
                 const data=JSON.parse(ev.target.result);
                 if(!Array.isArray(data))throw new Error('数据格式错误');
                 if(!data.every(a=>a.id&&a.name&&typeof a.r1==='number'))throw new Error('数据字段不完整');
-                data.forEach(a=>{if(!a.type)a.type='real'});
+                data.forEach((a,i)=>{if(!a.type)a.type='real';if(!a.createdAt)a.createdAt=i+1});
                 showImportConfirm(data,file.name);
             }catch(err){toast('导入失败：'+err.message,'err')}
         };
