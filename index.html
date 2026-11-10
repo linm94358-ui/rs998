@@ -133,6 +133,13 @@
         .field-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         .field-section-label{font-size:10px;font-weight:600;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;min-width:28px}
 
+        /* 复制下拉菜单 */
+        .copy-dropdown{position:absolute;top:calc(100% + 6px);right:0;min-width:160px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:100;overflow:hidden;animation:scaleIn .15s ease-out}
+        .copy-dropdown-item{display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;transition:all .15s;border-bottom:1px solid var(--bg2)}
+        .copy-dropdown-item:last-child{border-bottom:none}
+        .copy-dropdown-item:hover{background:var(--accent-dim);color:var(--accent)}
+        .copy-dropdown-item:active{background:var(--accent);color:#fff}
+
         @media(max-width:840px){
             .main-grid{grid-template-columns:1fr!important}
             .pm-group{gap:3px}
@@ -189,7 +196,22 @@
             <section class="fade-up" style="animation-delay:.12s">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
                     <h2 style="font-size:17px;font-weight:700"><i class="fas fa-trophy" style="color:var(--warm);margin-right:6px;font-size:15px"></i>积分排行</h2>
-                    <button class="btn btn-p" onclick="copyRanking()" id="copyBtn" style="display:none"><i class="fas fa-copy"></i> 一键复制</button>
+                    <div id="copyBtnGroup" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+                        <div style="position:relative" class="menu-anchor">
+                            <button class="btn btn-p" onclick="toggleCopyMenu(event,'copyDropdown')" aria-label="一键复制排行"><i class="fas fa-copy"></i> 一键复制 <i class="fas fa-caret-down" style="font-size:10px;margin-left:2px"></i></button>
+                            <div class="copy-dropdown" id="copyDropdown" style="display:none">
+                                <div class="copy-dropdown-item" onclick="copyRanking(10,false)"><i class="fas fa-list-ol" style="color:var(--accent)"></i> 复制前10名</div>
+                                <div class="copy-dropdown-item" onclick="copyRanking(0,false)"><i class="fas fa-list" style="color:var(--warm)"></i> 复制全部</div>
+                            </div>
+                        </div>
+                        <div style="position:relative" class="menu-anchor">
+                            <button class="btn btn-s" onclick="toggleCopyMenu(event,'fullDropdown')" aria-label="复制完整账号排行"><i class="fas fa-id-card"></i> 复制完整账号 <i class="fas fa-caret-down" style="font-size:10px;margin-left:2px"></i></button>
+                            <div class="copy-dropdown" id="fullDropdown" style="display:none">
+                                <div class="copy-dropdown-item" onclick="copyRanking(10,true)"><i class="fas fa-list-ol" style="color:var(--accent)"></i> 复制前10名</div>
+                                <div class="copy-dropdown-item" onclick="copyRanking(0,true)"><i class="fas fa-list" style="color:var(--warm)"></i> 复制全部</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div id="rankList"></div>
                 <div class="card" style="margin-top:18px;background:var(--bg2);border-color:var(--border)">
@@ -231,7 +253,6 @@
             accounts.forEach((a, i) => {
                 if (!a.type) a.type = 'real';
                 if (!a.createdAt) a.createdAt = i + 1;
-                // 兼容旧数据：无 scoreReachedAt 则用 createdAt 填充
                 if (!a.scoreReachedAt) a.scoreReachedAt = a.createdAt || i + 1;
             });
             saveData();
@@ -245,27 +266,47 @@
              + (a.r1toR2||0)*4 + (a.r1toR3||0)*10 + (a.r2toR3||0)*6;
     }
 
-    /* 排序：分数降序，同分则先达到当前分数者（scoreReachedAt 更小）排前面 */
     function rankSort(a, b) {
         const diff = calcScore(b) - calcScore(a);
         if (diff !== 0) return diff;
         return (a.scoreReachedAt || 0) - (b.scoreReachedAt || 0);
     }
 
-    function maskName(name) {
-        if (!name) return '***';
-        if (name.length <= 6) return name;
-        return name.slice(0,3) + '***' + name.slice(-3);
+    /* 一键复制用：省略部分用 5 个 * 表示，仅显示后 5 位 */
+    function maskName5(name) {
+        if (!name) return '*****';
+        if (name.length <= 5) return name;
+        return '*****' + name.slice(-5);
     }
 
     function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+    /* ========== 复制下拉菜单 ========== */
+    function toggleCopyMenu(e, menuId) {
+        if (e) e.stopPropagation();
+        const dd = document.getElementById(menuId);
+        const wasOpen = dd.style.display === 'block';
+        closeAllMenus();
+        if (!wasOpen) dd.style.display = 'block';
+    }
+
+    function closeAllMenus() {
+        document.getElementById('copyDropdown').style.display = 'none';
+        document.getElementById('fullDropdown').style.display = 'none';
+    }
+
+    /* 点击外部关闭下拉菜单 */
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.copy-dropdown') && !e.target.closest('.menu-anchor')) {
+            closeAllMenus();
+        }
+    });
 
     /* ========== 行内编辑 ========== */
     function incField(accId, field) {
         const a = accounts.find(x => x.id === accId);
         if (!a) return;
         a[field] = (a[field] || 0) + 1;
-        // 分数发生变化，记录达到当前分数的时间
         a.scoreReachedAt = Date.now();
         saveData();
         const valEl = document.getElementById('v-' + accId + '-' + field);
@@ -282,7 +323,6 @@
         const a = accounts.find(x => x.id === accId);
         if (!a || (a[field] || 0) <= 0) return;
         a[field] = (a[field] || 0) - 1;
-        // 分数发生变化，记录达到当前分数的时间
         a.scoreReachedAt = Date.now();
         saveData();
         const valEl = document.getElementById('v-' + accId + '-' + field);
@@ -430,24 +470,18 @@
 
     function renderRankList() {
         const el = document.getElementById('rankList');
-        const copyBtn = document.getElementById('copyBtn');
+        const btnGroup = document.getElementById('copyBtnGroup');
         if (accounts.length === 0) {
             el.innerHTML = '<div class="empty"><i class="fas fa-trophy"></i><p style="font-size:14px">暂无排行数据</p></div>';
-            copyBtn.style.display = 'none';
+            btnGroup.style.display = 'none';
             return;
         }
-        copyBtn.style.display = 'inline-flex';
+        btnGroup.style.display = 'flex';
         const sorted = accounts.slice().sort(rankSort);
-        const ranks = [];
-        let curRank = 1;
-        for (let i = 0; i < sorted.length; i++) {
-            if (i > 0 && calcScore(sorted[i]) < calcScore(sorted[i-1])) curRank = i + 1;
-            ranks.push(curRank);
-        }
         let html = '<div class="card" style="padding:6px 8px">';
         sorted.forEach((a, i) => {
             const score = calcScore(a);
-            const rank = ranks[i];
+            const rank = i + 1;
             const medalCls = rank===1?'m1':rank===2?'m2':rank===3?'m3':'m0';
             const rowCls = rank===1?'rank-row top1':'rank-row';
             const isReal = a.type !== 'noise';
@@ -456,7 +490,7 @@
                 <div class="medal ${medalCls}">${rank}</div>
                 <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px">
                     <span style="width:7px;height:7px;border-radius:50%;background:${dotColor};flex-shrink:0" title="${isReal?'真实账号':'吵群小号'}"></span>
-                    <span style="font-size:13px;font-weight:600;letter-spacing:.2px">${escHtml(maskName(a.name))}</span>
+                    <span style="font-size:13px;font-weight:600;letter-spacing:.2px;word-break:break-all">${escHtml(a.name)}</span>
                 </div>
                 <div style="text-align:right">
                     <span class="score-big" style="font-size:${rank<=3?22:18}px">${score}</span>
@@ -602,39 +636,42 @@
     function doClearAll() { accounts=[];saveData();closeModal();render();toast('所有数据已清空','ok'); }
     function closeModal() { document.getElementById('modalRoot').innerHTML=''; }
 
-    /* ========== 一键复制排行榜 ========== */
-    function copyRanking() {
+    /* ========== 一键复制排行榜（limit: 0=全部, n=前n名；isFull: 是否使用完整账号名） ========== */
+    function copyRanking(limit, isFull) {
+        closeAllMenus();
         if(accounts.length===0){toast('没有数据可复制','info');return}
         const sorted=accounts.slice().sort(rankSort);
-        const ranks=[];
-        let curRank=1;
-        for(let i=0;i<sorted.length;i++){
-            if(i>0&&calcScore(sorted[i])<calcScore(sorted[i-1]))curRank=i+1;
-            ranks.push(curRank);
-        }
-        const maskedNames=sorted.map(a=>maskName(a.name));
-        const maxNameLen=Math.max(...maskedNames.map(n=>n.length));
-        const maxRankLen=Math.max(...ranks.map(r=>String(r).length));
+        const items = limit > 0 ? sorted.slice(0, limit) : sorted;
+
+        const displayNames = items.map(a => isFull ? a.name : maskName5(a.name));
+        const maxNameLen=Math.max(...displayNames.map(n=>n.length));
 
         let text='';
-        text+='📊 *Kedudukan Skor Jemputan*\n';
+        const titleText = limit > 0
+            ? (isFull ? 'Kedudukan Skor Jemputan (Top ' + limit + ' - Akaun Penuh)' : 'Kedudukan Skor Jemputan (Top ' + limit + ')')
+            : (isFull ? 'Kedudukan Skor Jemputan (Akaun Penuh)' : 'Kedudukan Skor Jemputan');
+        text+='📊 *' + titleText + '*\n';
         text+='━━━━━━━━━━━━━━━━━━━━━━\n\n';
-        sorted.forEach((a,i)=>{
-            const rank=ranks[i];
-            const score=calcScore(a);
-            const masked=maskName(a.name);
-            const rankStr=String(rank)+'.';
-            const rankPad=rankStr+' '.repeat(Math.max(0,maxRankLen+2-rankStr.length));
-            const namePad=masked+' '.repeat(Math.max(0,maxNameLen-masked.length));
-            text+=rankPad+' _'+namePad+'_  ──  *'+score+' mata*\n';
+
+        items.forEach((a, i) => {
+            const rank = i + 1;
+            const score = calcScore(a);
+            const nameStr = displayNames[i];
+            const rankStr = String(rank) + '.';
+            const rankPad = rankStr + ' '.repeat(Math.max(0, 3 - rankStr.length));
+            const namePad = nameStr + ' '.repeat(Math.max(0, maxNameLen - nameStr.length));
+            text += rankPad + ' _' + namePad + '_  ──  *' + score + ' mata*\n';
         });
+
         text+='\n━━━━━━━━━━━━━━━━━━━━━━\n\n';
         text+='🎉 Tahniah kepada rakan-rakan yang telah memasuki senarai pendahulu di atas! 🎉\n';
         text+='Senarai pendahulu dikemas kini secara masa nyata! 🔄\n';
         text+='Pantau kedudukan anda dengan rapi, dan ambil tindakan sekarang! 💪\n';
         text+='Hadiah utama semakin hampir kepada anda! 🏆✨';
 
-        copyToClip(text, '排行榜已复制到剪贴板');
+        const scopeText = limit > 0 ? '前' + items.length + '名' : '全部';
+        const msg = isFull ? scopeText + '完整账号排行榜已复制' : scopeText + '排行榜已复制';
+        copyToClip(text, msg);
     }
 
     /* ========== 一键复制前7名完整账号 ========== */
@@ -643,25 +680,17 @@
         const sorted = accounts.slice().sort(rankSort);
         const top7 = sorted.slice(0, Math.min(7, sorted.length));
 
-        const ranks = [];
-        let curRank = 1;
-        for (let i = 0; i < sorted.length; i++) {
-            if (i > 0 && calcScore(sorted[i]) < calcScore(sorted[i-1])) curRank = i + 1;
-            ranks.push(curRank);
-        }
-
         const maxNameLen = Math.max(...top7.map(a => a.name.length));
-        const maxRankLen = Math.max(...ranks.slice(0, top7.length).map(r => String(r).length));
 
         let text = '';
         text += '📋 *Top 7 Akaun Pendahulu*\n';
         text += '━━━━━━━━━━━━━━━━━━━━━━\n\n';
 
         top7.forEach((a, i) => {
-            const rank = ranks[i];
+            const rank = i + 1;
             const score = calcScore(a);
             const rankStr = String(rank) + '.';
-            const rankPad = rankStr + ' '.repeat(Math.max(0, maxRankLen + 2 - rankStr.length));
+            const rankPad = rankStr + ' '.repeat(Math.max(0, 3 - rankStr.length));
             const namePad = a.name + ' '.repeat(Math.max(0, maxNameLen - a.name.length));
             text += rankPad + namePad + '  ──  *' + score + ' mata*\n';
         });
@@ -741,7 +770,7 @@
         saveData();closeModal();render();toast('数据导入成功，共 '+accounts.length+' 个账号','ok');
     }
 
-    document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal()});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();closeAllMenus()}});
     loadData(); render();
     </script>
 </body>
